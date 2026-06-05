@@ -250,6 +250,7 @@ fn test_generated_code_compiles() -> Result<()> {
         .arg("mdi:home")
         .arg("heroicons:arrow-left")
         .arg("lucide:settings")
+        .arg("logos:chrome")
         .arg("--output")
         .arg(&icons_dir)
         .assert()
@@ -273,13 +274,14 @@ mod icons;
 
 use dioxus::prelude::*;
 use icons::Icon;
-use icons::{heroicons, lucide, mdi};
+use icons::{heroicons, lucide, logos, mdi};
 
 fn main() {
     // Use the icons to avoid dead_code warnings
     let _home = mdi::Home;
     let _arrow = heroicons::ArrowLeft;
     let _settings = lucide::Settings;
+    let _chrome = logos::Chrome;
 
     println!("Icons loaded successfully");
 }
@@ -291,6 +293,7 @@ fn App() -> Element {
             Icon { data: mdi::Home }
             Icon { data: heroicons::ArrowLeft }
             Icon { data: lucide::Settings, width: "32", height: "32" }
+            Icon { data: logos::Chrome }
             Icon { data: mdi::Home, size: "24" }
             Icon { data: heroicons::ArrowLeft, size: 32.to_string() }
             Icon { data: lucide::Settings, size: "2em" }
