@@ -578,35 +578,50 @@ fn extract_string_value(line: &str) -> String {
     String::new()
 }
 
-/// Extract a raw string value that might span multiple lines
 fn extract_raw_string_value(lines: &[&str], index: &mut usize) -> String {
     let line = lines[*index];
 
-    // Look for r#"..."#
-    if let Some(start) = line.find("r#\"") {
-        let start_pos = start + 3;
+    // Find the start of a raw string literal (e.g. r#"..."#, r###"..."###).
+    if let Some(raw_string_start) = line.find("r#")
+        // Count the number of '#' characters by finding the opening quote
+        // relative to the 'r'.
+        //   r#"..."#     => 1
+        //   r###"..."### => 3
+        && let Some(hash_count) = line[raw_string_start + 1..].find('"')
+    {
+        // Position immediately after the opening quote.
+        let content_start = raw_string_start + hash_count + 2;
 
-        // Check if it ends on the same line
-        if let Some(end) = line[start_pos..].find("\"#") {
-            return line[start_pos..start_pos + end].to_string();
+        // Construct the matching closing delimiter.
+        //   hash_count = 1 => "#
+        //   hash_count = 3 => "###
+        let closing_delimiter = format!("\"{}", "#".repeat(hash_count));
+
+        // Single-line raw string.
+        if let Some(closing_offset) = line[content_start..].find(&closing_delimiter) {
+            return line[content_start..content_start + closing_offset].to_string();
         }
 
-        // Multi-line: collect until we find "#
-        let mut result = line[start_pos..].to_string();
+        // Multi-line raw string.
+        let mut content = String::from(&line[content_start..]);
         *index += 1;
 
         while *index < lines.len() {
-            let next_line = lines[*index];
-            if let Some(end) = next_line.find("\"#") {
-                result.push_str(&next_line[..end]);
+            let line = lines[*index];
+
+            // Found the closing delimiter.
+            if let Some(closing_offset) = line.find(&closing_delimiter) {
+                content.push('\n');
+                content.push_str(&line[..closing_offset]);
                 break;
             }
-            result.push_str(next_line);
-            result.push('\n');
+
+            content.push('\n');
+            content.push_str(line);
             *index += 1;
         }
 
-        result
+        content
     } else {
         String::new()
     }
